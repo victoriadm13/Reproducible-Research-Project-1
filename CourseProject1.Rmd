@@ -1,0 +1,136 @@
+---
+title: "Course Project 1 - Reproducible Research"
+author: "Victoria D."
+date: "12/1/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+ 
+## Loading the data
+
+```{R}
+data <- read.csv("activity.csv")
+```
+
+### First look at the data
+
+```{R}
+head(data)
+summary(data)
+```
+
+# What is mean total number of steps taken per day?
+
+Total number of steps taken per day
+```{R}
+steps_per_day <- aggregate(steps ~ date, data, sum)
+```
+
+Histogram of the total number of steps taken each day
+```{R}
+hist(steps_per_day$steps, main = "Number of steps per day", xlab = "Number of steps", col = "gray")
+```
+
+Mean and median of the total number of steps
+```{R}
+mean <- mean(steps_per_day$steps)
+median <- median(steps_per_day$steps)
+```
+
+The mean is `r mean` and the median is `r median`.
+
+# What is the average daily activity pattern?
+
+Time series plot of the 5-minute interval and the average number of steps taken, averaged across all days (y-axis)
+```{R}
+steps_by_interval <- aggregate(steps ~ interval, data = data, FUN = "mean")
+
+plot(steps_by_interval$interval,steps_by_interval$steps, type="l", xlab="Interval", ylab="Number of Steps",main="Average Number of Steps per Day by Interval")
+```
+
+Maximum number of steps  
+```{R}
+max <- steps_by_interval[which.max(steps_by_interval$steps),1]
+```
+The maxium number of steps in the dataset is `r max`.
+
+# Imputing missing values
+
+Total number of missing values in the dataset
+```{R}
+nas <- sum(!complete.cases(data))
+```
+The total number of missing values is: `r nas`.
+
+Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+To filled the missing data I used the mean number of steps of the interval
+```{R}
+mean_int <- mean(steps_by_interval$steps)
+data1 <- data
+nas_index <- is.na(data[,1])
+data1[nas_index,1] <- mean_int
+head(data1)
+```
+
+
+Histogram of the total number of steps taken each day
+
+```{R}
+steps_by_day1 <- aggregate(steps ~ date, data1, sum)
+hist(steps_by_day1$steps, xlab = "Total number of steps by day", main = "Number of steps by day with imputed missing values")
+```
+
+Mean and median total number of steps per day
+
+```{R}
+mean1 <- mean(steps_by_day1$steps)
+median1 <- median(steps_by_day1$steps)
+```
+
+The mean is `r mean1` and the median `r median1` after imputing the missing values.
+
+There is almost no impact in the mean and median due to the missing values imputation, probably because I use the mean of the inverval.
+
+
+# Are there differences in activity patterns between weekdays and weekends?
+
+Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
+
+```{R}
+data1$date <- as.Date(data1$date)
+
+weekday <- function(d) {
+  weekdays <- weekdays(d)
+  ifelse (weekdays == "Saturday" | weekdays == "Sunday", "weekend", "weekday")
+}
+
+week <- sapply(data1$date, weekday)
+data1$week <- as.factor(week)
+head(data1)
+```
+
+Make a panel plot containing a time series plot (i.e. 𝚝𝚢𝚙𝚎 = "𝚕") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
+
+
+```{R}
+data3 <- aggregate(steps ~ week+interval, data = data1, FUN = "mean")
+library(lattice)
+xyplot(steps ~ interval | factor(week),
+       layout = c(1,2),
+       xlab = "Interval",
+       ylab = "Number of steps",
+       type = "l",
+       lty = 1,
+       data = data3)
+```
+
+
+
+
+
+
+
